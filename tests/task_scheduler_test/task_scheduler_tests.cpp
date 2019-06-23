@@ -2,6 +2,7 @@
 // Created by frenchcommando on 22/06/2019.
 //
 
+#include <fstream>
 #include "task_scheduler/TaskScheduler.h"
 #include "gtest/gtest.h"
 
@@ -48,4 +49,28 @@ TEST(task_check, test_buffer){
     EXPECT_EQ(m - 1, t.add_task(1,m));
     EXPECT_EQ(m, t.add_task(1,1));
     EXPECT_EQ(m + 1, t.add_task(1,1));
+}
+
+void test_files(const std::string& f1, const std::string& f2){
+    std::string dir = "/mnt/c/Users/marti/CLionProjects/stunning-journey/tests/task_scheduler_test/hr_txt/";
+    std::ifstream infile_test (dir + f1);
+    std::ifstream infile_rep (dir + f2);
+    int n;
+    int d, m, s_ref;
+    infile_test >> n;
+    TaskScheduler t;
+    while (infile_test >> d){
+        infile_test >> m;
+        infile_rep >> s_ref;
+        EXPECT_EQ(s_ref, t.add_task(d, m));
+    }
+}
+
+void test_num(size_t n){
+    std::cout << "Test " << n << std::endl;
+    test_files("test" + std::to_string(n), "rep" + std::to_string(n));
+}
+
+TEST(task_check, test_hr1){
+    test_num(1);
 }

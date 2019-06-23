@@ -75,7 +75,7 @@ public:
         // + value of previous termination_map
         if (not termination_map.empty()){
             const auto it1 = termination_map.lower_bound(t);
-            if(it1 != termination_map.cend())
+            if(it1 != termination_map.cend() and it1->first < t)
                 termination += it1->second;
         }
         return termination;
