@@ -24,7 +24,7 @@ class palindrome_substring_ending{
     std::vector<std::set<iterator_type>> m; // m[i] contains the set of all the iterator_ends where each palindrome ends
     iterator_type it0;
     std::vector<size_t> longest_length;
-    std::vector<iterator_type> longest_it;
+    std::vector<iterator_type> longest_it; // make this lazy please ?
 public:
     explicit palindrome_substring_ending(const T& begin, const T& end)
             : it0(begin)
