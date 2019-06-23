@@ -39,8 +39,22 @@ struct TaskDupli{
 }; // represents a task but is unique
 
 class TaskScheduler {
+    // overshoot at zero while (sum(minutes) <= min(deadlines))
+
+    // new identical task ranked before or after previous ones
+    // -> either fewer termination+map value to add
+    // -> or potentially more candidates in arg_max
+
     std::map<Task, int> dupli; // always accurate
     std::set<TaskDupli> tasks; // always accurate
+
+    bool built = false; // simple mode when overshoot == 0
+
+    // zero overshoot case
+    int sum_minutes = 0;
+    int min_deadline = std::numeric_limits<int>::max();
+
+    // general case
     std::set<TaskDupli> arg_max; // always accurate
     int overshoot = 0; // I don't like max in prefix of variables - always accurate
     std::map<TaskDupli, int> termination_map;
@@ -72,17 +86,26 @@ public:
         TaskDupli td{deadline, minutes, index};
         tasks.emplace(td);
 
+        if(not built){
+            sum_minutes += minutes;
+            if(deadline < min_deadline)
+                min_deadline = deadline;
+            if(min_deadline >= sum_minutes)
+                return 0;
+        }
+
         int buffer_termination = estimate_termination(td);
         int buffer_overshoot = buffer_termination - deadline;
-        if (buffer_overshoot > overshoot + minutes){
+        if (built and buffer_overshoot > overshoot + minutes){
             overshoot = buffer_overshoot;
             arg_max = {td};
         } // current task becomes sole arg_max
-        else if (buffer_overshoot == overshoot + minutes){
+        else if (built and buffer_overshoot == overshoot + minutes){
             overshoot = buffer_overshoot;
             arg_max.emplace(td);
         } // current task is one of the max
         else{
+            built = true;
             auto it = arg_max.upper_bound(td);
             if (arg_max.empty() or it == arg_max.end()){
                 termination_map.clear();
