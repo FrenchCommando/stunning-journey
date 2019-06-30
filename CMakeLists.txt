@@ -13,3 +13,7 @@ add_subdirectory(src/palindrome)
 add_subdirectory(tests/palindrome_test)
 add_subdirectory(src/task_scheduler)
 add_subdirectory(tests/task_scheduler_test)
+
+add_subdirectory(src/subarray)
+add_subdirectory(tests/subarray_test)    
+        
