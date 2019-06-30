@@ -29,10 +29,10 @@ class ProjectBuilder:
 
     def append_to_cmake(self):
         # add_subdirectory to CMakeFile
-        cmake_string = """
-add_subdirectory({1}/{0})
-add_subdirectory({2}/{0}_test)    
-        """.format(self.lower, src, tests)
+        cmake_string = ("\n"
+                        "add_subdirectory({1}/{0})\n"
+                        "add_subdirectory({2}/{0}_test)\n"
+                        ).format(self.lower, src, tests)
         with open("CMakeLists.txt", "a") as cmake_file:
             cmake_file.write(cmake_string)
 
@@ -63,7 +63,7 @@ add_subdirectory({2}/{0}_test)
                     "}}; \n"
                     "\n"
                     "#endif //STUNNING_JOURNEY_{2}_H\n"
-                    "        ").format(host, now, self.upper, self.camel)
+                    ).format(host, now, self.upper, self.camel)
         with open(os.path.join(src_path, self.camel + ".h"), 'w+') as f:
             f.write(h_string)
 
