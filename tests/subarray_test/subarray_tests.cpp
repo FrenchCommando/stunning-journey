@@ -34,7 +34,6 @@ void test_num(size_t n){
     test_files("test" + std::to_string(n), "rep" + std::to_string(n));
 }
 
-
 TEST(basic_subarray_check, test_eq){
 	EXPECT_EQ(1, 1);
 }
@@ -53,4 +52,8 @@ TEST(subarray_check, test_hr1){
 
 TEST(subarray_check, test_hr2){
     test_num(2);
+}
+
+TEST(subarray_check, test_hr12){
+    test_num(12);
 }

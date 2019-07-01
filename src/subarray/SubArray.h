@@ -7,73 +7,86 @@
 
 #include <vector>
 #include <set>
+#include <algorithm>
+#include <iostream>
 
 class SubArray {
 
     std::vector<long> a;
     long m;
 
-    // Function to return gcd of a and b
-    static long gcd(long a, long b)
-    {
-        if (a == 0)
-            return b;
-        return gcd(b % a, a);
-    }
+    long current_max = 0;
 
-// Function to find gcd of array of
-// numbers
-    static long gcd(std::set<long> & v)
-    {
-        int result = 0;
-        for (const auto & i : v)
-            result = gcd(i, result);
-        return result;
-    }
-public:
-    SubArray(std::vector<long> a, long m): a(std::move(a)), m(m) {}
-    long solve_stupid(){
-        std::vector<long> aa;
-        aa.reserve(a.size());
-        std::set<long> values;
-
+    void preprocess(){
+        auto p = a.begin();
         for(const auto & i : a){
-            long l = i % m;
-            if (l > 0) {
-                aa.emplace_back(l);
-                values.emplace(i);
+            long l = i;
+            if(l >= m)
+                l %= m;
+            if (l != 0) {
+                *p++ = l;
             }
         }
+        a.resize(std::distance(a.begin(), p));
 
-        long d = gcd(values);
-        long threshold = m - d;
+    }
 
-        long current_max = 0;
+    explicit SubArray(std::vector<long> a, long m): a(std::move(a)), m(m){
+        preprocess();
+    };
 
-        const auto update_max = [&current_max](long candidate){
-            if(candidate > current_max)
-                current_max = candidate;
-        };
+    inline bool update_max(long candidate){
+        if(candidate == m - 1)
+            return true;
+        if(candidate > current_max)
+            current_max = candidate;
+        return false;
+    };
 
-        for(size_t i = 0 ; i < aa.size(); i++){
+    long solve_stupid(){
+        for(auto it = a.begin(); it != a.end(); it++){
             long s = 0;
-            for (size_t j = i ; j < aa.size() ; j++) {
-                s += aa[j];
+            for (auto it0 = it; it0 != a.end(); it0++){
+                s += *it0;
                 if (s >= m) // can only happen once
                     s -= m;
+                if (s == m - 1)
+                    return s;
                 update_max(s);
-                if (current_max == threshold)
-                    return current_max;
             }
         }
-
         return current_max;
     };
 
+    long solve_prefix(){
+        std::set<long> prefix;
+        long p = 0;
+        for(const auto & i : a){
+            p += i; // increment prefix
+            if(p >= m)
+                p -= m;
+            if (update_max(p))
+                return m - 1;
+            auto u = prefix.insert(p);
+            auto it = ++(u.first);
+            if(it != prefix.end()){
+                long c = p - *it + m;
+                if(c >= m)
+                    c -= m;
+                if (update_max(c))
+                    return m - 1;
+            }
+        }
+        return current_max;
+    };
+
+
 public:
-    // Complete the maximumSum function below.
     static long maximumSum(std::vector<long>& a, long m) {
-        return SubArray(a, m).solve_stupid();
+        SubArray s(a, m);
+//        std::cout << m << std::endl;
+        return s.solve_prefix();
+        return s.solve_stupid();
     }
 }; 
 
