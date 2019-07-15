@@ -119,9 +119,9 @@ class ProjectBuilder:
 
 if __name__ == "__main__":
     name = {
-        "lower": "subarray",
-        "upper": "SUBARRAY",
-        "camel": "SubArray",
+        "lower": "bike_racers",
+        "upper": "BIKE_RACERS",
+        "camel": "BikeRacers",
     }
     p = ProjectBuilder(**name)
     p.create_project()
