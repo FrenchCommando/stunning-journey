@@ -5,75 +5,10 @@
 #ifndef STUNNING_JOURNEY_BIKE_RACERS_H
 #define STUNNING_JOURNEY_BIKE_RACERS_H
 
-#include <vector>
-#include <map>
-#include <set>
 #include <numeric>
 #include <algorithm>
-
-
-struct matching_object{
-    const std::set<int> bikers;
-    const std::set<int> bikes;
-    int size() const{
-        return std::max(bikers.size(), bikes.size());
-    }
-
-    bool operator< (const matching_object& d) const{
-        auto s = this->size();
-        auto ds = d.size();
-        if (s == ds){
-            if (s == 0)
-                return false;
-            auto it = this->bikers.begin();
-            auto itd = d.bikers.begin();
-            for(size_t i = 0; i < s; i++){
-                if(*it != *itd)
-                    return *it < *itd;
-            }
-            it = this->bikes.begin();
-            itd = d.bikes.begin();
-            for(size_t i = 0; i < s; i++){
-                if(*it != *itd)
-                    return *it < *itd;
-            }
-            return false;
-        }
-        else
-            return s < ds;
-    }
-};
-
-struct matching_container{
-    std::set<matching_object> s_m;
-
-    static void update(std::set<matching_object>& sm,
-                const matching_object& d, int biker, int bike){
-        if(std::find(d.bikers.begin(), d.bikers.end(), biker) == d.bikers.end()){
-            if(std::find(d.bikes.begin(), d.bikes.end(), bike) == d.bikes.end()) {
-                auto s_bikers = d.bikers;
-                auto s_bikes = d.bikes;
-                s_bikers.insert(biker);
-                s_bikes.insert(bike);
-                sm.emplace(matching_object{s_bikers, s_bikes});
-            }
-        }
-    }
-
-    bool build(int biker, int bike, int k) {
-        std::set<matching_object> sm;
-        for(const auto& d: s_m)
-            update(sm, d, biker, bike);
-        if(not sm.empty()){
-            auto it = sm.rbegin();
-            if(it->size() == k)
-                return true;
-            for(const auto& u: sm)
-                s_m.insert(u);
-        }
-        return false;
-    }
-};
+#include <iostream>
+#include "InsularGraph.h"
 
 
 class BikeRacers {
@@ -92,6 +27,8 @@ public:
         if(bikers.size() > bikes.size())
             return solve(bikes, bikers, k);
         // assume now there are more bikes than bikers
+        if(k == 0)
+            return 0;
 
         std::vector<std::vector<long>> m; //contains distances
         std::vector<std::vector<int>> priority;
@@ -162,18 +99,22 @@ public:
         auto it_down = std::lower_bound(mmm.begin(), mmm.end(), yield_mapping_down(), s_sort);
         // this is an lower-bound of the actual solution
 
-        if (m[it_down->first][it_down->second] < m[it_up->first][it_up->second])
+        if (m[it_down->first][it_down->second] == m[it_up->first][it_up->second])
             return m[it_down->first][it_down->second];
 
-        matching_container m_c;
-        auto it = mmm.begin();
-        while(it != mmm.end()){
-            if(m_c.build(it->first, it->second, k))
-                return m[it->first][it->second];
-            it++;
-        }
+        // Use InsularGraph object
 
-        return 0;
+        std::vector<std::pair<int, int>> edges (mmm.begin(), it_down);
+        auto it = it_down;
+        it_down = std::upper_bound(it, mmm.end(), *it, s_sort);
+        std::copy(it, it_down, std::back_inserter(edges));
+        while(not InsularGraph::solve(edges, k)){
+            it = it_down;
+            it_down = std::upper_bound(it, mmm.end(), *it, s_sort);
+            std::copy(it, it_down, std::back_inserter(edges));
+            std::cout << m[it->first][it->second] << std::endl;
+        }
+        return m[it->first][it->second];
     };
 }; 
 

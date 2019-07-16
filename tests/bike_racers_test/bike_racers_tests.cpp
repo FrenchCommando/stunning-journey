@@ -42,12 +42,39 @@ void test_num(size_t n){
     test_files("test" + std::to_string(n), "rep" + std::to_string(n));
 }
 
+TEST(basic_bike_racers_check, test_insular_graph0){
+    std::vector<std::pair<int, int>> edges = {{0, 1}, {0, 2}};
+    EXPECT_EQ(true, InsularGraph::solve(edges, 0));
+    EXPECT_EQ(true, InsularGraph::solve(edges, 1));
+    EXPECT_EQ(false, InsularGraph::solve(edges, 2));
+}
+
+TEST(basic_bike_racers_check, test_insular_graph1){
+    std::vector<std::pair<int, int>> edges = {{0, 1}, {0, 2}, {2, 3}};
+    EXPECT_EQ(true, InsularGraph::solve(edges, 0));
+    EXPECT_EQ(true, InsularGraph::solve(edges, 1));
+    EXPECT_EQ(true, InsularGraph::solve(edges, 2));
+    EXPECT_EQ(false, InsularGraph::solve(edges, 3));
+}
+
+TEST(basic_bike_racers_check, test_insular_graph2){
+    std::vector<std::pair<int, int>> edges = {{0, 1}, {0, 2}, {2, 1}};
+    EXPECT_EQ(true, InsularGraph::solve(edges, 0));
+    EXPECT_EQ(true, InsularGraph::solve(edges, 1));
+    EXPECT_EQ(false, InsularGraph::solve(edges, 2));
+    EXPECT_EQ(false, InsularGraph::solve(edges, 3));
+}
+
 TEST(basic_bike_racers_check, test_hr0){
     test_num(0);
 }
 
 TEST(basic_bike_racers_check, test_hr1){
     test_num(1);
+}
+
+TEST(basic_bike_racers_check, test_hr6){
+    test_num(6);
 }
 
 TEST(basic_bike_racers_check, test_hr14){
