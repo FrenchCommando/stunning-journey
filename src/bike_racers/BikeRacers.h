@@ -7,7 +7,6 @@
 
 #include <numeric>
 #include <algorithm>
-#include <iostream>
 #include "InsularGraph.h"
 
 
@@ -30,54 +29,27 @@ public:
         if(k == 0)
             return 0;
 
+        const auto bikers_size = bikers.size();
+
         std::vector<std::vector<long>> m; //contains distances
-        std::vector<std::vector<int>> priority;
         m.reserve(bikers.size());
-        priority.reserve(bikers.size());
         for(const auto& biker: bikers){
             std::vector<long> dist;
-            std::vector<int> prio(bikes.size());
             dist.reserve(bikes.size());
             for(const auto & bike: bikes)
                 dist.push_back(distance(biker, bike));
-            std::iota(prio.begin(), prio.end(), 0);
-            std::sort(prio.begin(), prio.end(), [dist](int a, int b) {
-                return dist[a] < dist[b];
-            });
             m.push_back(std::move(dist));
-            priority.push_back(std::move(prio));
         }
 
-        const auto s_sort = [&m](const std::pair<int, int>& p1, const std::pair<int, int>& p2){
-            return m[p2.first][p2.second] > m[p1.first][p1.second];
+        const auto s_sort = [&m, bikers_size](const std::pair<int, int>& p1, const std::pair<int, int>& p2){
+            return m[p2.first][p2.second - bikers_size] > m[p1.first][p1.second - bikers_size];
         };
         std::vector<std::pair<int, int>> mmm;
         mmm.reserve(bikers.size() * bikes.size());
         for(size_t i = 0; i < bikers.size(); i++)
             for(size_t j = 0; j < bikes.size(); j++)
-                mmm.emplace_back(i, j);
+                mmm.emplace_back(i, j + bikers_size);
         std::sort(mmm.begin(), mmm.end(), s_sort);
-
-        const auto yield_mapping_up = [&](){
-            std::vector<bool> taken(bikes.size(), false);
-            std::map<int, int> mapping;
-            for(size_t i = 0 ; i < bikers.size(); i++){ // assign all bikers
-                size_t index = 0;
-                while(taken[priority[i][index]])
-                    index++;
-                const auto chosen = priority[i][index];
-                taken[chosen] = true;
-                mapping[i] = chosen;
-            }
-            std::vector<std::pair<int, int>> mmm_one;
-            mmm_one.reserve(bikers.size());
-            for(const auto & u: mapping)
-                mmm_one.emplace_back(std::pair<int, int>{u.first, u.second});
-            std::sort(mmm_one.begin(), mmm_one.end(), s_sort);
-            return mmm_one[k - 1];
-        };
-        auto it_up = std::lower_bound(mmm.begin(), mmm.end(), yield_mapping_up(), s_sort);
-        // this is an upper-bound of the actual solution
 
         const auto yield_mapping_down = [&](){
             std::set<int> bike_seen, biker_seen;
@@ -99,9 +71,6 @@ public:
         auto it_down = std::lower_bound(mmm.begin(), mmm.end(), yield_mapping_down(), s_sort);
         // this is an lower-bound of the actual solution
 
-        if (m[it_down->first][it_down->second] == m[it_up->first][it_up->second])
-            return m[it_down->first][it_down->second];
-
         // Use InsularGraph object
 
         std::vector<std::pair<int, int>> edges (mmm.begin(), it_down);
@@ -112,9 +81,8 @@ public:
             it = it_down;
             it_down = std::upper_bound(it, mmm.end(), *it, s_sort);
             std::copy(it, it_down, std::back_inserter(edges));
-            std::cout << m[it->first][it->second] << std::endl;
         }
-        return m[it->first][it->second];
+        return m[it->first][it->second - bikers_size];
     };
 }; 
 

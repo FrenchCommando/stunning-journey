@@ -77,6 +77,10 @@ TEST(basic_bike_racers_check, test_hr6){
     test_num(6);
 }
 
+TEST(basic_bike_racers_check, test_hr11){
+    test_num(11);
+}
+
 TEST(basic_bike_racers_check, test_hr14){
     test_num(14);
 }
