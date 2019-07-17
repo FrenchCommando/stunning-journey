@@ -23,10 +23,10 @@
 
 class InsularFlow {
     typedef std::tuple<char, int> NodeType;
+    typedef std::vector<NodeType> PathType;
     std::map<NodeType, std::set<NodeType>> edges;
     static constexpr NodeType source {'s', 0};
     static constexpr NodeType target {'t', 0};
-    typedef std::vector<NodeType> PathType;
 
     explicit InsularFlow(const std::vector<std::pair<int, int>> &edges){
         std::set<NodeType> parents;

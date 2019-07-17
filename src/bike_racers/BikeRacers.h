@@ -7,7 +7,7 @@
 
 #include <numeric>
 #include <algorithm>
-//#include <iostream>
+#include <iostream>
 #include "InsularGraph.h"
 #include "InsularFlow.h"
 
@@ -32,13 +32,21 @@ public:
             return 0;
 
         std::vector<std::vector<long>> m; //contains distances
+        std::vector<std::vector<int>> priority;
         m.reserve(bikers.size());
+        priority.reserve(bikers.size());
         for(const auto& biker: bikers){
             std::vector<long> dist;
+            std::vector<int> prio(bikes.size());
             dist.reserve(bikes.size());
             for(const auto & bike: bikes)
                 dist.push_back(distance(biker, bike));
+            std::iota(prio.begin(), prio.end(), 0);
+            std::sort(prio.begin(), prio.end(), [dist](int a, int b) {
+                return dist[a] < dist[b];
+            });
             m.push_back(std::move(dist));
+            priority.push_back(std::move(prio));
         }
 
         const auto s_sort = [&m](const std::pair<int, int>& p1, const std::pair<int, int>& p2){
@@ -51,15 +59,56 @@ public:
                 mmm.emplace_back(i, j);
         std::sort(mmm.begin(), mmm.end(), s_sort);
 
+        const auto yield_mapping_up = [&](){
+            std::vector<bool> taken(bikes.size(), false);
+            std::map<int, int> mapping;
+            for(size_t i = 0 ; i < bikers.size(); i++){ // assign all bikers
+                size_t index = 0;
+                while(taken[priority[i][index]])
+                    index++;
+                const auto chosen = priority[i][index];
+                taken[chosen] = true;
+                mapping[i] = chosen;
+            }
+            std::vector<std::pair<int, int>> mmm_one;
+            mmm_one.reserve(bikers.size());
+            for(const auto & u: mapping)
+                mmm_one.emplace_back(std::pair<int, int>{u.first, u.second});
+            std::sort(mmm_one.begin(), mmm_one.end(), s_sort);
+            return mmm_one[k - 1];
+        };
+        auto it_up = std::lower_bound(mmm.begin(), mmm.end(), yield_mapping_up(), s_sort);
+        // this is an upper-bound of the actual solution
+
+        const auto yield_mapping_down = [&](){
+            std::set<int> bike_seen, biker_seen;
+            int biker_count = 0;
+            int bike_count = 0;
+            auto it_down = mmm.begin();
+            while(true)
+            {
+                biker_seen.insert(it_down->first);
+                bike_seen.insert(it_down->second);
+                biker_count = biker_seen.size();
+                bike_count = bike_seen.size();
+                if(bike_count < k or biker_count < k)
+                    it_down++;
+                else
+                    return *it_down;
+            }
+        };
+        auto it_down = std::lower_bound(mmm.begin(), mmm.end(), yield_mapping_down(), s_sort);
+        // this is an lower-bound of the actual solution
+
         // Use InsularGraph object
         const auto b = mmm.begin();
         const auto value = [k, b, &m](const std::vector<std::pair<int, int>>::iterator& it) -> bool {
-//            std::cout << std::distance(b, it) << "\t" << m[it->first][it->second] << std::endl;
+            std::cout << std::distance(b, it) << "\t" << m[it->first][it->second] << std::endl;
 //            std::vector<std::pair<int, int>> v (b, it);
             return InsularFlow::solve(b, it, k);
         };
-        auto it = mmm.begin(); // binary_search comp function doesn't take iterator as argument
-        auto top = mmm.end();
+        auto it = it_down; // binary_search comp function doesn't take iterator as argument
+        auto top = it_up;
         while (top != it){
             if(top == it+1){
                 break;
