@@ -65,6 +65,39 @@ TEST(basic_bike_racers_check, test_insular_graph2){
     EXPECT_EQ(false, InsularGraph::solve(edges, 3));
 }
 
+// insular flow distinguishes left and right
+TEST(basic_bike_racers_check, test_insular_flow0){
+    std::vector<std::pair<int, int>> edges = {{0, 0}, {1, 1}};
+    EXPECT_EQ(true, InsularFlow::solve(edges, 0));
+    EXPECT_EQ(true, InsularFlow::solve(edges, 1));
+    EXPECT_EQ(true, InsularFlow::solve(edges, 2));
+    EXPECT_EQ(false, InsularFlow::solve(edges, 3));
+}
+
+TEST(basic_bike_racers_check, test_insular_flow1){
+    std::vector<std::pair<int, int>> edges = {{0, 0}, {0, 1}, {1, 1}};
+    EXPECT_EQ(true, InsularFlow::solve(edges, 0));
+    EXPECT_EQ(true, InsularFlow::solve(edges, 1));
+    EXPECT_EQ(true, InsularFlow::solve(edges, 2));
+    EXPECT_EQ(false, InsularFlow::solve(edges, 3));
+}
+
+TEST(basic_bike_racers_check, test_insular_flow2){
+    std::vector<std::pair<int, int>> edges = {{0, 0}, {0, 1}, {0, 2}};
+    EXPECT_EQ(true, InsularFlow::solve(edges, 0));
+    EXPECT_EQ(true, InsularFlow::solve(edges, 1));
+    EXPECT_EQ(false, InsularFlow::solve(edges, 2));
+    EXPECT_EQ(false, InsularFlow::solve(edges, 3));
+}
+
+TEST(basic_bike_racers_check, test_insular_flow3){
+    std::vector<std::pair<int, int>> edges = {{0, 0}, {1, 0}, {2, 0}};
+    EXPECT_EQ(true, InsularFlow::solve(edges, 0));
+    EXPECT_EQ(true, InsularFlow::solve(edges, 1));
+    EXPECT_EQ(false, InsularFlow::solve(edges, 2));
+    EXPECT_EQ(false, InsularFlow::solve(edges, 3));
+}
+
 TEST(basic_bike_racers_check, test_hr0){
     test_num(0);
 }

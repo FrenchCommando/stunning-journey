@@ -48,6 +48,7 @@ class InsularGraph {
     }
 
 public:
+
     static bool solve(const std::vector<std::pair<int, int>> &edges, int k){
         if(k <= 0)
             return true;
@@ -70,6 +71,15 @@ public:
         }
         return false;
     }
+
+    static bool solve_raw(const std::vector<std::pair<int, int>> &edges, int k) {
+        std::vector<std::pair<int, int>> clean_edges;
+        clean_edges.reserve(edges.size());
+        for(const auto& p : edges)
+            clean_edges.emplace_back(std::pair<int, int>{p.first, - p.second});
+        return solve(clean_edges, k);
+    }
+
 };
 
 
