@@ -28,6 +28,9 @@ class InsularFlow {
     static constexpr NodeType source {'s', 0};
     static constexpr NodeType target {'t', 0};
 
+    static std::deque<PathType> tape_read;
+    static std::deque<PathType> tape_write;
+
     explicit InsularFlow(const std::vector<std::pair<int, int>> &edges){
         std::set<NodeType> parents;
         std::set<NodeType> children;
@@ -42,6 +45,8 @@ class InsularFlow {
             this->edges[source].insert(p);
         for(const auto& c : children)
             this->edges[c].insert(target);
+        if(not tape_write.empty())
+            tape_read = tape_write;
     }
     explicit InsularFlow(const std::vector<std::pair<int, int>>::iterator &edges_begin,
             const std::vector<std::pair<int, int>>::iterator &edges_end){
@@ -58,6 +63,8 @@ class InsularFlow {
             this->edges[source].insert(p);
         for(const auto& c : children)
             this->edges[c].insert(target);
+        if(not tape_write.empty())
+            tape_read = tape_write;
     }
     void apply_path(const PathType& p){
         auto it = p.begin();
@@ -70,7 +77,34 @@ class InsularFlow {
         }
         edges[*it].erase(target);
     }
+
+    bool check_path(PathType& p) const{
+        // contains at least parent and child
+        auto it = p.begin();
+        if(edges.at(source).find(*it) != edges.at(source).end()){
+            while(it + 1 != p.end() and edges.at(*it).find(*(it+1)) != edges.at(*it).end()){
+                it++;
+            }
+            if(it+1 == p.end())
+                return edges.at(*it).find(target) != edges.at(*it).end();
+        }
+        return false;
+    }
+
     bool find_and_apply_path(){
+        if(not tape_read.empty()){
+            auto p = tape_read[0];
+            tape_read.pop_front();
+            if(check_path(p)){
+                apply_path(p);
+                tape_write.emplace_back(p);
+                return true;
+            }
+            else{
+//                tape_read.clear();
+                return find_and_apply_path();
+            }
+        }
         // BFS search
         std::deque<PathType> queue;
         std::set<NodeType> seen;
@@ -85,6 +119,7 @@ class InsularFlow {
             for(const auto& n: edges[last]){
                 if(n == target){
                     apply_path(p);
+                    tape_write.emplace_back(p);
                     return true;
                 }
                 if(std::find(seen.begin(), seen.end(), n) == seen.end()){
@@ -140,5 +175,8 @@ public:
         return insularFlow.get_max_flow() >= k;
     };
 };
+
+std::deque<InsularFlow::PathType> InsularFlow::tape_read = {};
+std::deque<InsularFlow::PathType> InsularFlow::tape_write = {};
 
 #endif //STUNNING_JOURNEY_INSULARFLOW_H
