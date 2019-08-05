@@ -139,3 +139,48 @@ TEST(suffix_tree_check, test_suffix_char) {
     EXPECT_EQ(false, t_ptr->is_substring("bbb", c));
     EXPECT_EQ(false, t_ptr->is_substring("ccc", b));
 }
+
+TEST(suffix_tree_check, test_suffix_plus) {
+    std::string s = "abababa";
+    std::unique_ptr<SuffixTreeInterface> t_ptr = std::make_unique<MockSuffixTreeInterface>();
+    const auto b = t_ptr->add_string(s);
+    t_ptr->print_suffix();
+
+    EXPECT_EQ(true, t_ptr->is_substring("a", b));
+    EXPECT_EQ(true, t_ptr->is_substring("b", b));
+    EXPECT_EQ(true, t_ptr->is_substring("ab", b));
+    EXPECT_EQ(true, t_ptr->is_substring("ba", b));
+    EXPECT_EQ(true, t_ptr->is_substring("aba", b));
+    EXPECT_EQ(true, t_ptr->is_substring("bab", b));
+    EXPECT_EQ(true, t_ptr->is_substring("abab", b));
+    EXPECT_EQ(true, t_ptr->is_substring("baba", b));
+    EXPECT_EQ(true, t_ptr->is_substring("ababa", b));
+    EXPECT_EQ(true, t_ptr->is_substring("babab", b));
+    EXPECT_EQ(true, t_ptr->is_substring("ababab", b));
+    EXPECT_EQ(true, t_ptr->is_substring("bababa", b));
+    EXPECT_EQ(true, t_ptr->is_substring("abababa", b));
+    EXPECT_EQ(false, t_ptr->is_substring("aa", b));
+    EXPECT_EQ(false, t_ptr->is_substring("bb", b));
+}
+
+
+void lcs_s1s2(const std::string& s1, const std::string& s2, const std::string & ss){
+    std::unique_ptr<SuffixTreeInterface> t_ptr = std::make_unique<MockSuffixTreeInterface>();
+    t_ptr->add_string(s1);
+    t_ptr->add_string(s2);
+//    t_ptr->print_suffix();
+
+    const auto s = t_ptr->longest_common_substring();
+    EXPECT_EQ(ss, s);
+}
+
+TEST(suffix_tree_check, test_suffix_longest_common_substring) {
+
+    lcs_s1s2("pqrst", "uvwxyz", "");
+    lcs_s1s2("abcde", "fghie", "e");
+    lcs_s1s2("aaaaa", "aaaaa", "aaaaa");
+    lcs_s1s2("GeeksforGeeks", "GeeksQuiz", "Geeks");
+    lcs_s1s2("xabxac", "abcabxabcd", "abxa");
+    lcs_s1s2("OldSite:GeeksforGeeks.org", "NewSite:GeeksQuiz.com", "Site:Geeks");
+    lcs_s1s2("xabxaabxa", "babxba", "abx");
+}

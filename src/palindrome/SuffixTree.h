@@ -42,8 +42,9 @@ namespace ukkonen_perso{
         // for common substring keys
         std::array<bool, MAX_CHAR> has_key{false};
         bool has_all_keys {false};
-        // invalidate value when adding new string tot he tree
-
+        // invalidate value when adding new string to the tree
+        char c_longest {root_char};
+        int i_longest {-1};
 
         explicit Node(StringKey key, IndexType start, IndexType* end)
                 :
@@ -82,6 +83,27 @@ namespace ukkonen_perso{
                     [h=&has_key](char s){ return h->at(s); });
         }
 
+        int fill_longest_branch(){
+            if(is_leaf()){
+                i_longest = string_length();
+                return i_longest;
+            }
+            if(c_longest != root_char)
+                return i_longest;
+
+            for(int i = 0 ; i < MAX_CHAR; i++){
+                if(children.at(i) != nullptr and children.at(i)->has_all_keys){
+                    const auto i_candidate = children.at(i)->fill_longest_branch();
+                    if(i_candidate > i_longest){
+                        i_longest = i_candidate;
+                        c_longest = static_cast<char>(i);
+                    }
+                }
+            }
+            i_longest += string_length();
+            return i_longest;
+        }
+
         static NodePtr build_root(){
             return std::make_unique<Node>(root_char, root_start, nullptr);
         }
@@ -94,6 +116,12 @@ namespace ukkonen_perso{
             return key == root_char;
         }
 
+        [[nodiscard]] int string_length() const{
+            if(!is_root())
+                return *end - start + 1;
+            return 0;
+        }
+
     };
 
     class SuffixTree : public SuffixTreeInterface{
@@ -104,15 +132,13 @@ namespace ukkonen_perso{
         std::string keys{""};
         std::array<std::string, MAX_CHAR> text_str{""};
 
-        void fill_node_keys(){
-            std::set<char>s {};
-            root->fill_node_keys(keys, s);
-        };
-
-        int edgeLength(const NodePtrRaw& n) {
-            if(n == root.get())
-                return 0;
-            return *(n->end) - (n->start) + 1;
+        [[nodiscard]] std::string get_string(const Node& n) const{
+            if(n.key == root_char)
+                return "";
+            std::string s;
+            for(IndexType i = n.start; i <= *n.end; i++)
+                s += text.at(n.key)[i];
+            return s;
         }
 
         void extend_suffix_tree(const char k, const char* t, IndexType& end, const size_t size){
@@ -124,7 +150,7 @@ namespace ukkonen_perso{
             // follow active edge along suffix link - then reduce length
 
             const auto walk_down = [&](){
-                const auto active_edge_length = edgeLength(active_node);
+                const auto active_edge_length = active_node->string_length();
                 while (active_node != root.get()
                        and active_len >= active_edge_length)
                 {
@@ -198,6 +224,11 @@ namespace ukkonen_perso{
             }
         }
 
+        void fill_node_keys(){
+            std::set<char>s {};
+            root->fill_node_keys(keys, s);
+        };
+
         bool is_substring_with_pred(const std::string::const_iterator& begin,
                                     const std::string::const_iterator& end,
                                     const Node& n,
@@ -223,13 +254,8 @@ namespace ukkonen_perso{
             return is_substring_with_pred(it, end, *n.children.at(c), f);
         }
 
-        [[nodiscard]] std::string get_string(const Node& n) const{
-            if(n.key == root_char)
-                return "";
-            std::string s;
-            for(IndexType i = n.start; i <= *n.end; i++)
-                s += text.at(n.key)[i];
-            return s;
+        void fill_longest_branch(){
+            root->fill_longest_branch();
         }
 
         void print(const Node& n, std::string s, const std::function<bool(const Node&)> & f) const{
@@ -282,7 +308,14 @@ namespace ukkonen_perso{
             const auto f = [](const Node& n) -> bool {return n.has_all_keys;};
             return is_substring_with_pred(s.cbegin(), s.cend(), *root, f);        }
         [[nodiscard]] std::string longest_common_substring() const override {
-            return "Me = Me - Me Me";
+            std::string s;
+            root->fill_longest_branch();
+            NodePtrRaw node = root.get();
+            while(node != nullptr){
+                s += get_string(*node);
+                node = node->children.at(node->c_longest).get();
+            }
+            return s;
         }
 
         void print_suffix() const override {
