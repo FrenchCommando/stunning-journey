@@ -23,8 +23,6 @@ constexpr auto compare_string = [](const std::string & s1, const std::string & s
 
 class PalindromicSubstring {
     static std::string solve_palindromic_substring(const std::string &s1, const std::string &s2) {
-
-
         std::vector<char> common_data;
         std::set<char> ss1, ss2;
         for(const auto& c: s1)
@@ -34,7 +32,7 @@ class PalindromicSubstring {
         set_intersection(ss1.begin(), ss1.end(), ss2.begin(), ss2.end(),
                 std::back_inserter(common_data));
         if(common_data.empty())
-            return "0";
+            return "";
 
         ukkonen_perso::SuffixTree t;
         const auto c1 = t.add_string(s1);
@@ -44,10 +42,13 @@ class PalindromicSubstring {
                 {c1, palindrome_substring_object(s1)},
                 {c2, palindrome_substring_object(s2)},
         };
-        const auto p_string = [&](char c, int i){
+        const auto p_string_length = [&](char c, int i){
             return m.at(c).longest_palindrome_substring_starting_length(i);
         };
-        return t.longest_common_substring_plus_palindrome(p_string);
+        const auto p_string_value = [&](char c, int i){
+            return m.at(c).longest_palindrome_substring_starting(i);
+        };
+        return t.longest_common_substring_plus_palindrome(p_string_length, p_string_value, compare_string);
     };
 
 public:

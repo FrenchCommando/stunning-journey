@@ -13,6 +13,7 @@
 #include <functional>
 #include <set>
 #include <map>
+#include <sstream>
 #include "SuffixTreeInterface.h"
 
 namespace ukkonen_perso{
@@ -102,7 +103,7 @@ namespace ukkonen_perso{
             return i_longest;
         }
 
-        [[nodiscard]] int longest_common_substring_plus_palindrome(
+        int longest_common_substring_plus_palindrome_length(
                 const std::function<int(char, int)>& p_string){
             if(is_leaf()){ // no common substring
                 i_longest = 0;
@@ -111,7 +112,7 @@ namespace ukkonen_perso{
             }
             for(const auto & p: children){
                 const auto i_candidate =
-                        p.second->longest_common_substring_plus_palindrome(p_string)
+                        p.second->longest_common_substring_plus_palindrome_length(p_string)
                         + string_length() * 2;
                 if(p.second->has_all_keys){
                     if(i_candidate > i_longest){
@@ -359,11 +360,26 @@ namespace ukkonen_perso{
         }
 
         [[nodiscard]] std::string longest_common_substring_plus_palindrome(
-                const std::function<int(char, int)>& p_string) const{
+                const std::function<int(char, int)>& p_string_length,
+                const std::function<std::string(char, int)>& p_string_value,
+                const std::function<std::string(const std::string&, const std::string&)>& string_compare
+                ) const{
             fill_node_keys();
-            const auto rep = root->longest_common_substring_plus_palindrome(p_string);
-//            print_longest(*root.get());
-            return std::to_string(rep);
+            const auto rep_int = root->longest_common_substring_plus_palindrome_length(p_string_length);
+            std::cout << rep_int << std::endl;
+            std::stringstream ss;
+            auto n = root.get();
+            while(n->c_longest != root_char){
+                n = n->children[n->c_longest].get();
+                ss << get_string(*n);
+            }
+            const auto s1 = ss.str();
+            const auto m = n->string_index;
+            std::string s_pal_candidate;
+            for(const auto & p : m)
+                for(const auto i: p.second)
+                    s_pal_candidate = string_compare(p_string_value(p.first, i + 1), s_pal_candidate);
+            return s1 + s_pal_candidate + std::string(s1.crbegin(), s1.crend());
         }
 
         void print_suffix() const override {

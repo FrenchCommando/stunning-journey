@@ -17,7 +17,7 @@ void test_files(const std::string& f1, const std::string& f2){
         infile_test >> s2;
         infile_rep >> s_ref;
 //        std::cout << s_ref << std::endl;
-        s_ref = s_ref=="-1"?"0":std::to_string(s_ref.length());
+//        s_ref = s_ref=="-1"?"0":std::to_string(s_ref.length());
         auto s_rep = PalindromicSubstring::solve(s1, s2);
 //        std::cout << s_ref << "\t" << s_rep << std::endl;
         EXPECT_EQ(s_ref, s_rep);
