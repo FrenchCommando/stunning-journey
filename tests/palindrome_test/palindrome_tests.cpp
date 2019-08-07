@@ -6,16 +6,7 @@
 #include "gtest/gtest.h"
 
 
-TEST(basic_check, test_eq){
-    EXPECT_EQ(1, 1);
-}
-
-TEST(basic_check, test_neq){
-    EXPECT_NE(1, 0);
-}
-
-
-TEST(palindrom_check, test_const){
+TEST(palindrome_check, test_const){
     auto n = 10;
     std::string s (n, 'a');
     palindrome_substring_object p(s);
@@ -27,7 +18,7 @@ TEST(palindrom_check, test_const){
     EXPECT_EQ("", p.longest_palindrome_substring_starting(n + 1));
 }
 
-TEST(palindrom_check, test_abcd){
+TEST(palindrome_check, test_abcd){
     auto n = 10;
     char c = 'a';
     std::stringstream ss;
@@ -44,7 +35,7 @@ TEST(palindrom_check, test_abcd){
     EXPECT_EQ("", p.longest_palindrome_substring_starting(n));
 }
 
-TEST(palindrom_check, test_aba){
+TEST(palindrome_check, test_aba){
     std::string s = "aba";
     palindrome_substring_object p(s);
 
@@ -58,7 +49,7 @@ TEST(palindrom_check, test_aba){
     EXPECT_EQ("", p.longest_palindrome_substring_starting(3));
 }
 
-TEST(palindrom_check, test_abb){
+TEST(palindrome_check, test_abb){
     std::string s = "abb";
     palindrome_substring_object p(s);
 
@@ -70,4 +61,39 @@ TEST(palindrom_check, test_abb){
     EXPECT_EQ("b", p.longest_palindrome_substring_starting(2));
     EXPECT_EQ(0, p.longest_palindrome_substring_starting_length(3));
     EXPECT_EQ("", p.longest_palindrome_substring_starting(3));
+}
+
+TEST(palindrome_check, test_hr2){
+    std::string s = "uxivudydgxwsgmhlracaayipsojleqhpygshcvxvchsgyphqeljospiyaacuvmeewpdwpiymwbhoxebjibxphief";
+    palindrome_substring_object p(s);
+
+    EXPECT_EQ(1, p.longest_palindrome_substring_starting_length(0));
+    EXPECT_EQ("u", p.longest_palindrome_substring_starting(0));
+
+    EXPECT_EQ(3, p.longest_palindrome_substring_starting_length(17));
+    EXPECT_EQ("aca", p.longest_palindrome_substring_starting(17));
+    EXPECT_EQ(41, p.longest_palindrome_substring_starting_length(18));
+    EXPECT_EQ("caayipsojleqhpygshcvxvchsgyphqeljospiyaac",
+              p.longest_palindrome_substring_starting(18));
+    EXPECT_EQ(39, p.longest_palindrome_substring_starting_length(19));
+    EXPECT_EQ("aayipsojleqhpygshcvxvchsgyphqeljospiyaa",
+              p.longest_palindrome_substring_starting(19));
+}
+
+TEST(palindrome_check, test_hr6){
+    std::string s = "jmbpdtwnznblwvtjrniwlbyblhppndspojrouffazpoxtqdfpjuhitvijrohavpqatofxwmksvjcvhdecxwwmosqiczjpkfamkdkjbfqflivigiwztgbybugifdyhojtjkoaqiehkjmatgyhgkjumwvalsqmcoiijvwchnenikrlizwkhktdxtqvxibctbnbxfudivicnljlnzpghgpznljlncividufxbnbtcbixvqtxdtkhkwzilrkinenhcwvjiiocmqslavwmujkghygtamjkheiqaovbvafaeqqojypxjdyxdzxbtkccesympaxxhzcaqjdoixjiivinpidpfjhvavbwpckqncjwygbbdwbqjvde";
+    palindrome_substring_object p(s);
+
+    EXPECT_EQ(1, p.longest_palindrome_substring_starting_length(0));
+    EXPECT_EQ("j", p.longest_palindrome_substring_starting(0));
+
+    EXPECT_EQ(157, p.longest_palindrome_substring_starting_length(130));
+    EXPECT_EQ("oaqiehkjmatgyhgkjumwvalsqmcoiijvwchnenikrlizwkhktdxtqvxibctbnbxfudivicnljlnzpghgpznljlncividufxbnbtcbixvqtxdtkhkwzilrkinenhcwvjiiocmqslavwmujkghygtamjkheiqao", p.longest_palindrome_substring_starting(130));
+
+    // 96
+    // 130 - start palindrome
+    // 157 - length palindrome
+//    for(size_t i = 0; i < s.length(); i++)
+//        std::cout << i << "\t" << p.longest_palindrome_substring_starting_length(i) << "\t" << p.longest_palindrome_substring_starting(i) << "\n";
+//    std::cout << std::endl;
 }

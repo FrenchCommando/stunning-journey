@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(PALINDROME_SOURCE_FILES
         Palindrome.cpp Palindrome.h
         SuffixTree.cpp SuffixTree.h
+        PalindromicSubstring.cpp PalindromicSubstring.h
         SuffixTreeInterface.h
         )
 

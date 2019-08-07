@@ -60,16 +60,16 @@ public:
         }
     }
 
-    auto longest_palindrome_substring_ending(const T& it) const {
+    [[nodiscard]] auto longest_palindrome_substring_ending(const T& it) const {
         const auto index = std::distance(it0, it);
         return longest_it.at(index);
     }
 
-    auto longest_palindrome_substring_ending(size_t i) const{
+    [[nodiscard]] auto longest_palindrome_substring_ending(size_t i) const{
         return std::string(longest_it.at(i), it0 + i + 1);
     }
 
-    auto longest_palindrome_substring_ending_length(size_t i) const{
+    [[nodiscard]] auto longest_palindrome_substring_ending_length(size_t i) const{
         return longest_length.at(i);
     }
 
@@ -99,26 +99,26 @@ public:
             , ps(s.crbegin(), s.crend())
     {};
 
-    auto length() const{
+    [[nodiscard]] auto length() const{
         return n;
     }
 
-    auto longest_palindrome_substring_ending(size_t i) const
+    [[nodiscard]] auto longest_palindrome_substring_ending(size_t i) const
     {
         return pe.longest_palindrome_substring_ending(i);
     }
-    std::string longest_palindrome_substring_starting(size_t i) const
+    [[nodiscard]] std::string longest_palindrome_substring_starting(size_t i) const
     {
         if (i >= n)
             return "";
         return ps.longest_palindrome_substring_ending(n - i - 1);
     }
 
-    auto longest_palindrome_substring_ending_length(size_t i) const
+    [[nodiscard]] auto longest_palindrome_substring_ending_length(size_t i) const
     {
         return pe.longest_palindrome_substring_ending_length(i);
     }
-    size_t longest_palindrome_substring_starting_length(size_t i) const
+    [[nodiscard]] size_t longest_palindrome_substring_starting_length(size_t i) const
     {
         if (i >= n)
             return 0;
@@ -126,10 +126,5 @@ public:
     }
 
 };
-
-class Palindrome {
-
-};
-
 
 #endif //STUNNING_JOURNEY_PALINDROME_H

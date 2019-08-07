@@ -12,24 +12,25 @@
 #include <iostream>
 #include <functional>
 #include <set>
+#include <map>
 #include "SuffixTreeInterface.h"
 
 namespace ukkonen_perso{
 
-    struct Node;
+    struct Node;  // forward declaration
     using NodePtr = std::unique_ptr<Node>;
     using NodePtrRaw = Node*;
     using StringKey = char;
     using IndexType = int;
     constexpr int MAX_CHAR = 256;
 
-    constexpr StringKey escaped_char [] = "!@#$%^&*()_+{}:<>?-=[];',./";
+    constexpr StringKey escaped_char [] = "!@#$%^&*()_{}:<>?-=[];',./";
     // zero char at the end
-    constexpr StringKey root_char {' '}; // space not zero
+    constexpr StringKey root_char {'+'}; // not zero - anything else is easier to read
     constexpr IndexType root_start {-1};
 
     struct Node {
-        std::array<NodePtr, MAX_CHAR> children {nullptr};
+        std::map<char, NodePtr> children;
         StringKey key;
 
         IndexType start;
@@ -40,11 +41,14 @@ namespace ukkonen_perso{
         NodePtrRaw suffixLink {nullptr};
 
         // for common substring keys
-        std::array<bool, MAX_CHAR> has_key{false};
+        std::set<char> has_key;
         bool has_all_keys {false};
-        // invalidate value when adding new string to the tree
-        char c_longest {root_char};
-        int i_longest {-1};
+
+        // to route longest common substring - or other criteria
+        char c_longest {root_char}; // which child to choose
+        int i_longest {0};
+        std::map<StringKey, std::vector<IndexType>> string_index {}; // index for end of node
+
 
         explicit Node(StringKey key, IndexType start, IndexType* end)
                 :
@@ -58,29 +62,25 @@ namespace ukkonen_perso{
             end = &fixed_end;
         }
 
-        void fill_node_keys(const std::string& keys, std::set<char>& found){
+        void fill_node_keys(const std::set<char>& keys, std::set<char>& found){
             if(is_leaf()) { // is leaf
                 found.insert(key);
             }
             else{
                 auto r_found = found;
                 std::swap(found, r_found);
-                for (int i = 0; i < MAX_CHAR; i++)
-                {
-                    if(children.at(i) != nullptr){
-                        auto c_found = found;
-                        children.at(i)->fill_node_keys(keys, c_found);
-                        for(const auto & u: c_found)
-                            r_found.insert(u);
-                    }
+                for(const auto & p: children){
+                    auto c_found = found;
+                    p.second->fill_node_keys(keys, c_found);
+                    for(const auto & u: c_found)
+                        r_found.insert(u);
                 }
                 std::swap(found, r_found);
             }
 //            has_key.at(key) = true;
             for(const auto & b: found)
-                has_key.at(b) = true;
-            has_all_keys = std::all_of(keys.cbegin(), keys.cend(),
-                    [h=&has_key](char s){ return h->at(s); });
+                has_key.insert(b);
+            has_all_keys = (has_key == keys);
         }
 
         int fill_longest_branch(){
@@ -88,19 +88,52 @@ namespace ukkonen_perso{
                 i_longest = string_length();
                 return i_longest;
             }
-            if(c_longest != root_char)
-                return i_longest;
 
-            for(int i = 0 ; i < MAX_CHAR; i++){
-                if(children.at(i) != nullptr and children.at(i)->has_all_keys){
-                    const auto i_candidate = children.at(i)->fill_longest_branch();
+            for(const auto & p: children){
+                if(p.second->has_all_keys){
+                    const auto i_candidate = p.second->fill_longest_branch();
                     if(i_candidate > i_longest){
                         i_longest = i_candidate;
-                        c_longest = static_cast<char>(i);
+                        c_longest = p.first;
                     }
                 }
             }
             i_longest += string_length();
+            return i_longest;
+        }
+
+        [[nodiscard]] int longest_common_substring_plus_palindrome(
+                const std::function<int(char, int)>& p_string){
+            if(is_leaf()){ // no common substring
+                i_longest = 0;
+                string_index[key] = std::vector<IndexType>{*end};
+                return i_longest;
+            }
+            for(const auto & p: children){
+                const auto i_candidate =
+                        p.second->longest_common_substring_plus_palindrome(p_string)
+                        + string_length() * 2;
+                if(p.second->has_all_keys){
+                    if(i_candidate > i_longest){
+                        i_longest = i_candidate;
+                        c_longest = p.first;
+                    }
+                }
+                for(const auto & pp : p.second->string_index)
+                    for(const auto s: pp.second)
+                        string_index[pp.first].emplace_back(s - p.second->string_length());
+            }
+            if(not is_root() and has_all_keys){
+                for(const auto & pp : string_index){
+                    for(const auto s: pp.second){
+                        const auto i_candidate = p_string(pp.first, s + 1) + string_length() * 2;
+                        if(i_candidate > i_longest){
+                            i_longest = i_candidate;
+                            c_longest = root_char;
+                        }
+                    }
+                }
+            }
             return i_longest;
         }
 
@@ -129,12 +162,13 @@ namespace ukkonen_perso{
         NodePtr root;
         std::array<const char*, MAX_CHAR> text{nullptr};
         std::array<IndexType, MAX_CHAR> text_end{-1};
-        std::string keys{""};
+        std::set<char> keys;
         std::array<std::string, MAX_CHAR> text_str{""};
 
         [[nodiscard]] std::string get_string(const Node& n) const{
             if(n.key == root_char)
                 return "";
+//                return std::string(1, static_cast<char>(root_char));
             std::string s;
             for(IndexType i = n.start; i <= *n.end; i++)
                 s += text.at(n.key)[i];
@@ -145,35 +179,14 @@ namespace ukkonen_perso{
             // c is the key for the string to append
             int remainder = 0;
             NodePtrRaw active_node = root.get();
+            root->suffixLink = root.get();
             IndexType active_len = 0;
             IndexType active_e = 0;
-            // follow active edge along suffix link - then reduce length
-
-            const auto walk_down = [&](){
-                const auto active_edge_length = active_node->string_length();
-                while (active_node != root.get()
-                       and active_len >= active_edge_length)
-                {
-                    active_e += active_edge_length;
-                    active_len -= active_edge_length;
-                    active_node = active_node->children.at(text.at(k)[active_e]).get();
-                }
-            };
-
 
             for(int i = 0 ; i < size; i++){
                 end = i;
                 const auto c = t[end];
                 NodePtrRaw lastNewNode = nullptr;
-
-                const auto build_node = [&lastNewNode, &remainder, k](IndexType start, IndexType* end){
-                    auto p = std::make_unique<Node>(k, start, end);
-                    if (lastNewNode != nullptr)
-                        lastNewNode->suffixLink = p.get();
-                    lastNewNode = p.get();
-                    remainder--;
-                    return std::move(p);
-                };
 
                 remainder++;
                 while(remainder > 0) {
@@ -181,50 +194,63 @@ namespace ukkonen_perso{
                         active_e = end;
 
                     const auto active_edge = text.at(k)[active_e];
-                    if (active_node->children.at(active_edge).get() == nullptr)
-                        active_node->children.at(active_edge) = build_node(end, &end);
+                    if (active_node->children.find(active_edge) == active_node->children.end()){
+                        active_node->children[active_edge] = std::make_unique<Node>(k, end, &end);
+                        active_node->children[active_edge]->suffixLink = root.get();
+                        if (lastNewNode != nullptr)
+                            lastNewNode->suffixLink = active_node;
+                        lastNewNode = active_node;
+                        remainder--;
+                    }
                     else {
-                        walk_down(); //observation 2
-                        auto nxt = active_node->children.at(text.at(k)[active_e]).get();
-                        if (text.at(nxt->key)[nxt->start + active_len] == c) { //observation 1
+                        if(auto active_edge_length = active_node->children[active_edge]->string_length();
+                        active_len >= active_edge_length) {
+                            active_e += active_edge_length;
+                            active_len -= active_edge_length;
+                            active_node = active_node->children[active_edge].get();
+                            continue;
+                        }
+                        if (text.at(active_node->children[active_edge]->key)
+                        [active_node->children[active_edge]->start
+                        + active_len] == c) {
                             active_len++;
-                            if (lastNewNode != nullptr)
-                                lastNewNode->suffixLink = active_node;
                             break;
                         }
-                        IndexType split_end = nxt->start + active_len;
-                        auto split_c = text.at(nxt->key)[split_end];
-                        auto ref_c = text.at(k)[end];
-                        auto active_children = std::move(nxt->children);
+                        auto nxt = std::move(active_node->children[active_edge]);
 
-                        //New internal node
-                        auto old_end = nxt->end;
-                        IndexType old_fixed_end = nxt->fixed_end;
-                        nxt->fix_end(split_end - 1);
-                        nxt->children[split_c] = std::make_unique<Node>(
-                                nxt->key, split_end, old_end);
-                        if(old_fixed_end != -1)
-                            nxt->children[split_c]->fix_end(old_fixed_end);
-                        nxt->children[split_c]->children = std::move(active_children);
+                        active_node->children[active_edge] = std::make_unique<Node>(nxt->key, nxt->start, nullptr);
+                        const auto split_node = active_node->children[active_edge].get();
+                        if (lastNewNode != nullptr) {
+                            lastNewNode->suffixLink = split_node;
+                        }
+                        lastNewNode = split_node;
 
-                        //New leaf coming out of new internal node
-                        nxt->children[ref_c] = build_node(end, &end);
+                        split_node->fix_end(nxt->start + active_len - 1);
+                        remainder--;
+
+                        const auto ref_c = text.at(k)[end];
+                        split_node->children[ref_c] = std::make_unique<Node>(k, end, &end); // this is a leaf
+                        split_node->children[ref_c]->suffixLink = root.get();
+
+                        const auto split_c = text.at(nxt->key)[nxt->start + active_len];
+                        nxt->start += active_len;
+                        split_node->children[split_c] = std::move(nxt);
                     }
 
-                    if (active_node == root.get() && active_len > 0) { //rule 1
+                    if (active_node == root.get() && active_len > 0) {
                         active_len--;
                         active_e = end - remainder + 1;
-                    } else{
-                        if(active_node->suffixLink != nullptr)
-                            active_node = active_node->suffixLink;
-                        else
-                            active_node = root.get();
+                    }
+                    else{
+                        active_node = active_node->suffixLink;
                     }
                 }
+                if (lastNewNode != nullptr)
+                    lastNewNode->suffixLink = active_node;
             }
         }
 
-        void fill_node_keys(){
+        void fill_node_keys() const {
             std::set<char>s {};
             root->fill_node_keys(keys, s);
         };
@@ -249,12 +275,12 @@ namespace ukkonen_perso{
             if(it == end)
                 return true;
             const auto c = *it;
-            if (n.children.at(c) == nullptr)
+            if (n.children.find(c) == n.children.end())
                 return false;
-            return is_substring_with_pred(it, end, *n.children.at(c), f);
+            return is_substring_with_pred(it, end, *(n.children.at(c)), f);
         }
 
-        void fill_longest_branch(){
+        void fill_longest_branch() const {
             root->fill_longest_branch();
         }
 
@@ -265,13 +291,24 @@ namespace ukkonen_perso{
                 std::cout << '\n';
             }
             else{
-                for (int i = 0; i < MAX_CHAR; i++)
-                {
-                    if(n.children.at(i) != nullptr){
-                        print(*n.children.at(i), ss, f);
-                    }
-                }
+                for(const auto & p: n.children)
+                    print(*p.second, ss, f);
             }
+        }
+
+        void print_longest(const Node& n) const{
+            std::cout << "NextLongestString\t" << n.c_longest << "\t" << n.i_longest << "\t" << get_string(n);
+            std::cout << '\n';
+            for(const auto & p: n.children)
+                std::cout << p.first << " ";
+            std::cout << '\n';
+            std::cout << "KeyStartEnd\t" << n.key << "\t" << n.start << "\t";
+            if(n.end != nullptr)
+                std::cout << *n.end;
+            std::cout << '\n';
+            std::cout << '\n';
+            if(n.children.find(n.c_longest) != n.children.end())
+                print_longest(*n.children.at(n.c_longest).get());
         }
 
     public:
@@ -281,20 +318,17 @@ namespace ukkonen_perso{
 
         ~SuffixTree() override = default;
         char add_string(std::string s) override {
-//            std::cout << std::endl;
-//            std::cout << s << "\t" << keys.size() << "\t" << (sizeof escaped_char) << std::endl;
             if(keys.size() > (sizeof escaped_char)) {
                 throw std::range_error("Can't build string - max number of escaped chars reached");
             }
             const auto k = escaped_char[keys.size()];
-            keys += k;
-//            std::cout << "Keys\t" << keys << std::endl;
+            keys.insert(k);
 
             text_str.at(k) = std::move(s);
             text_str.at(k) += k;
             text.at(k) = text_str.at(k).c_str();
+
             extend_suffix_tree(k, text.at(k), text_end.at(k), text_str.at(k).length());
-            fill_node_keys();
             return k;
         }
         [[nodiscard]] bool is_substring(const std::string &s) const override {
@@ -302,20 +336,34 @@ namespace ukkonen_perso{
             return is_substring_with_pred(s.cbegin(), s.cend(), *root, f);
         }
         [[nodiscard]] bool is_substring(const std::string &s, const char key) const override {
-            const auto f = [key](const Node& n) -> bool {return n.has_key.at(key);};
-            return is_substring_with_pred(s.cbegin(), s.cend(), *root, f);        }
+            const auto f = [key](const Node& n) -> bool {return n.has_key.find(key) != n.has_key.end();};
+            fill_node_keys();
+            return is_substring_with_pred(s.cbegin(), s.cend(), *root, f);
+        }
         [[nodiscard]] bool is_common_substring(const std::string &s) const override {
             const auto f = [](const Node& n) -> bool {return n.has_all_keys;};
-            return is_substring_with_pred(s.cbegin(), s.cend(), *root, f);        }
+            fill_node_keys();
+            return is_substring_with_pred(s.cbegin(), s.cend(), *root, f);
+        }
         [[nodiscard]] std::string longest_common_substring() const override {
-            std::string s;
-            root->fill_longest_branch();
+            fill_node_keys();
+            fill_longest_branch();
             NodePtrRaw node = root.get();
-            while(node != nullptr){
+            std::string s;
+            while(node->children.find(node->c_longest) != node->children.end()){
                 s += get_string(*node);
-                node = node->children.at(node->c_longest).get();
+                node = node->children[node->c_longest].get();
             }
+            s += get_string(*node);
             return s;
+        }
+
+        [[nodiscard]] std::string longest_common_substring_plus_palindrome(
+                const std::function<int(char, int)>& p_string) const{
+            fill_node_keys();
+            const auto rep = root->longest_common_substring_plus_palindrome(p_string);
+//            print_longest(*root.get());
+            return std::to_string(rep);
         }
 
         void print_suffix() const override {
@@ -324,7 +372,7 @@ namespace ukkonen_perso{
             std::cout << std::endl;
         };
         void print_suffix(char key) const override {
-            const auto f = [key](const Node& n) -> bool {return n.has_key.at(key);};
+            const auto f = [key](const Node& n) -> bool {return n.has_key.find(key) != n.has_key.end();};
             print(*root, "", f);
             std::cout << std::endl;
         };

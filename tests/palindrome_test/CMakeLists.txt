@@ -6,6 +6,7 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 set(PALINDROME_TEST_FILES
         palindrome_tests.cpp
+        palindrome_substring_tests.cpp
         substring_tests.cpp
         )
 add_executable(runPalindromeTests ${PALINDROME_TEST_FILES})

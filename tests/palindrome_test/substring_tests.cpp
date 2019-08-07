@@ -140,11 +140,23 @@ TEST(suffix_tree_check, test_suffix_char) {
     EXPECT_EQ(false, t_ptr->is_substring("ccc", b));
 }
 
+TEST(suffix_tree_check, test_suffix_two_char) {
+    std::string s1 = "axba"; // s2 rides suffix link from s1
+    std::string s2 = "ab";
+
+    std::unique_ptr<SuffixTreeInterface> t_ptr = std::make_unique<MockSuffixTreeInterface>();
+    const auto b = t_ptr->add_string(s1);
+    const auto c = t_ptr->add_string(s2);
+//    t_ptr->print_suffix();
+    EXPECT_EQ(true, t_ptr->is_substring("b", b));
+    EXPECT_EQ(true, t_ptr->is_substring("b", c));
+}
+
 TEST(suffix_tree_check, test_suffix_plus) {
     std::string s = "abababa";
     std::unique_ptr<SuffixTreeInterface> t_ptr = std::make_unique<MockSuffixTreeInterface>();
     const auto b = t_ptr->add_string(s);
-    t_ptr->print_suffix();
+//    t_ptr->print_suffix();
 
     EXPECT_EQ(true, t_ptr->is_substring("a", b));
     EXPECT_EQ(true, t_ptr->is_substring("b", b));
@@ -161,6 +173,10 @@ TEST(suffix_tree_check, test_suffix_plus) {
     EXPECT_EQ(true, t_ptr->is_substring("abababa", b));
     EXPECT_EQ(false, t_ptr->is_substring("aa", b));
     EXPECT_EQ(false, t_ptr->is_substring("bb", b));
+    EXPECT_EQ(false, t_ptr->is_substring("abababab", b));
+    EXPECT_EQ(false, t_ptr->is_substring("babababa", b));
+    EXPECT_EQ(false, t_ptr->is_substring("ababababa", b));
+    EXPECT_EQ(false, t_ptr->is_substring("ababababab", b));
 }
 
 
@@ -174,8 +190,7 @@ void lcs_s1s2(const std::string& s1, const std::string& s2, const std::string & 
     EXPECT_EQ(ss, s);
 }
 
-TEST(suffix_tree_check, test_suffix_longest_common_substring) {
-
+TEST(suffix_tree_check, test_suffix_longest_common_substring){
     lcs_s1s2("pqrst", "uvwxyz", "");
     lcs_s1s2("abcde", "fghie", "e");
     lcs_s1s2("aaaaa", "aaaaa", "aaaaa");
@@ -183,4 +198,18 @@ TEST(suffix_tree_check, test_suffix_longest_common_substring) {
     lcs_s1s2("xabxac", "abcabxabcd", "abxa");
     lcs_s1s2("OldSite:GeeksforGeeks.org", "NewSite:GeeksQuiz.com", "Site:Geeks");
     lcs_s1s2("xabxaabxa", "babxba", "abx");
+}
+
+TEST(suffix_tree_check, test_suffix_longest_common_substring_hr2) {
+    std::string s1 = "uxivudydgxwsgmhlracaayipsojleqhpygshcvxvchsgyphqeljospiyaacuvmeewpdwpiymwbhoxebjibxphief";
+    std::string s2 = "gtsawcdivtltrshjqnkkmdtjgscnozmojnhigippjemzzzbcvoyplxenffmfdzdiojuodgbulvarlhmgswxgdyduviyaov";
+    std::string rs2 ( s2.crbegin(), s2.crend());
+    lcs_s1s2(s1, rs2, "ivudydgxwsgmhlra");
+}
+
+TEST(suffix_tree_check, test_suffix_longest_common_substring_hr6) {
+    std::string s1 = "jmbpdtwnznblwvtjrniwlbyblhppndspojrouffazpoxtqdfpjuhitvijrohavpqatofxwmksvjcvhdecxwwmosqiczjpkfamkdkjbfqflivigiwztgbybugifdyhojtjkoaqiehkjmatgyhgkjumwvalsqmcoiijvwchnenikrlizwkhktdxtqvxibctbnbxfudivicnljlnzpghgpznljlncividufxbnbtcbixvqtxdtkhkwzilrkinenhcwvjiiocmqslavwmujkghygtamjkheiqaovbvafaeqqojypxjdyxdzxbtkccesympaxxhzcaqjdoixjiivinpidpfjhvavbwpckqncjwygbbdwbqjvde";
+    std::string s2 = "hkevsntanowlersappruokywnegncmjvjxcsalrmiuszjmkapbwdvdnjxnxrnlmirlmehsayuhjpajkuxsyrirkpmgzcyupoigwsdqsuxmaixwsqgvlrjzfcqrphsbgrsfneaijelhyrumkqpkqklsacnhpznpxzsfgmcoubkkjtjohydfigubybgtzwigivilfqfbjkdkmdehaozddwxttffshovpvpoldlonlkeggvxcyqkabpwnrzejfdopdhxkoqspevrrjeochbdfqbvcoyvffvzauufrrohjtxnj";
+    std::string rs2 ( s2.crbegin(), s2.crend());
+    lcs_s1s2(s1, rs2, "mkdkjbfqflivigiwztgbybugifdyhojtjk");
 }
